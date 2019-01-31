@@ -1,0 +1,136 @@
+---
+title: "PS1"
+author: "DanlingMa"
+date: "1/25/2019"
+output: html_document
+---
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)   # loads a number of helpful Hadley Wickham packages
+library(ggplot2)     # way better than Base plotting
+library(readr)       # allows to read csv files as "tibbles"
+library(tidyr)       # newer replacement for package Reshape
+```
+
+# 1
+```{r}
+nmc = 1000
+nsamp = 20
+
+var1 = rep(0,nmc)
+var2 = rep(0,nmc)
+
+
+for( i in 1:nmc) {
+  # generate two samples
+  x = rnorm(nsamp, mean = 0, sd = 1)
+  m = mean(x)
+  # variance without correction
+  var1[i] = (1/nsamp)*sum((x-m)^2)
+  # variance with correction (n-1)
+  var2[i] = (1/(nsamp-1))*sum((x-m)^2)
+
+}
+  bias1= mean(var1-1)
+  bias2= mean(var2-1)
+  mse1 =mean((var1-1)^2)
+  mse2 =mean((var2-1)^2)
+# Compare the different forecasts
+sprintf('Bias without correction is %s.', round(bias1,5))
+sprintf('MSE without correction is %s.', round(mse1,5))
+
+sprintf('Bias with correction is %s.', round(bias2,5))
+sprintf('MSE with correction is %s.', round(mse2,5))
+```
+- MSE with the correction (n-1) is larger.
+
+# 2
+```{r}
+# Monte-carlo size
+nmc <- 1000
+# Sample size
+nsamp <- 20
+
+b = rep(0,nmc)
+se = rep(0,nmc)
+r2 = rep(0,nmc)
+
+for( i in 1:nmc) {
+  # generate samples
+  x <- rnorm(nsamp, mean = 0, sd = 1)
+  e <- rnorm(nsamp, mean = 0, sd = 1)
+  y <- 5 + 2*x + e
+  # fit the model
+  fitreg2 = lm(y ~ x)
+  modsum = summary(fitreg2)
+  b[i] = modsum$coefficients[2,1]
+  se[i] = modsum$coefficients[2,2]
+  r2[i] = modsum$r.squared
+}
+hist(b)
+# Compare the different forecasts
+sprintf('The standard deviation of beta is %s',sd(b))
+sprintf('The standard error of beta is %s',mean(se))
+```
+
+- Yes, the standard deviation and the standard error is pretty close. Because with the sample size increasing, the standard deviation of the sample will tend to approximate the population standard deviation.
+
+
+# 3
+## a
+```{r Q3, warning=FALSE}
+# sample size   [increasing the sample size, results would be better]
+nsamp <- 20     # nsamp = 20000   mseIN & mseOUT both converge to 1.
+# number of monte-carlo
+nmc   <- 1000
+# in sample         [train]
+r_sqIN <- rep(0,nmc)
+# out of sample     [test]
+r_sqOUT <- rep(0,nmc)
+# set linear parameter
+beta <- 1
+
+for (i in 1:nmc) {
+  x <- rnorm(nsamp, mean = 0, sd = 1)
+  e <- rnorm(nsamp, mean = 0, sd = 5)
+  # build linear model
+  y <- beta*x + e
+  # fit OLS linear model
+  fitreg3 <- lm( y ~ x)
+  rsum = summary(fitreg3)
+  # mean
+  f1 = mean(y)
+  # in sample forecast
+  yhat <- fitreg3$fitted.values
+  # in sample r-squared
+  r_sqIN[i] <- rsum$r.squared
+  # build new clean data [new validation data]
+  x2 <- rnorm(nsamp, mean = 0, sd = 1)
+  e2 <- rnorm(nsamp, mean = 0, sd = 5)
+  y2 <- beta*x2 + e2
+  # convert x2 into dataframe with x label
+  # this is done for predict command
+  xdf <- data.frame(x=x2)
+  # get out of sample forecast for y ## [df input]  --> predicted y output
+  yhat2 <- predict(fitreg3,xdf)     
+  # out of sample r_squared
+  r_sqOUT[i] = 1-(sum((y2-yhat2)^2/sum((y2-f1)^2)))
+}
+sprintf('In sample R-squared is %s',mean(r_sqIN))    
+sprintf('Out of sample R-squared is %s',mean(r_sqOUT))  
+
+
+# plot the histogram
+hist(r_sqOUT, col = 'dark green')
+```
+
+
+- Yes, some of OUT-sample R-squared are negative. 
+  And the In-sample R-squared could not be negative.
+
+## e
+
+- Yes, it can be a kind of forecast comparison, because it measures how good does the model estimate with the new unfamiliar data.
+`r # why people dont use R2???`
+
+
