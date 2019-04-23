@@ -1,0 +1,75 @@
+---
+title: "PS4-danlingma"
+author: "DanlingMa"
+date: "2/25/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+# Dow Jones industrial price series. 
+
+As in class find the 150 moving average. Generate a variable called strategy which is 1 when the price is above the moving average, and -1 when it is below.
+
+```{r}
+library(forecast)
+library(zoo)
+setwd("~/Desktop/Forecasting")
+
+dow.data <- read.csv("DowDaily.csv")
+n = nrow(dow.data)
+
+dates <- as.Date(dow.data$Date,format="%m/%d/%Y")
+
+dowts <- zoo(dow.data$Close,dates)
+dowVolts <- zoo(dow.data$Volume,dates)
+
+retts <- diff(log(dowts))
+
+dowma <- rollmean(dowts,k=150,align="right")
+dowts <- dowts[-(1:149)]
+n <- length(dowts)
+ret <- diff(log(dowts), lag=1)
+
+strategy <- (dowts >= dowma)*(1) + (dowts < dowma)*(-1)
+strategy = strategy[-n]
+
+tradMod <- lm( ret ~ strategy)
+```
+
+## Multiply strategy(t) by the return(t+1). Does this feel like a strategy where you are going long and short in the Dow?, Why?
+```{r}
+str_ret = strategy*ret
+```
+
+Sure. When stock price is higher than the MA price, we long the stock and if we long the stock when MA is higher than the stock price, we will lose money.
+
+## What is the mean for this strategy, and its standard deviation?
+```{r}
+avg = mean(str_ret)
+std = sd(str_ret)
+```
+
+The mean for this strategy is `r avg`, and the standard deviation is `r std`.
+
+## Assuming a risk free rate of zero, find the daily Sharpe ratio which is the ratio of the mean return divided by the standard deviation. Convert this to an annualized Sharpe ratio by multiplying by sqrt(250). 250 are the number of trading days in most years.
+```{r}
+sharpe=mean(str_ret)/sd(str_ret) * sqrt(250)
+```
+
+The sharpe ratio would be `r sharpe`.
+
+## Also, perform a t-test on that return (from the strategy) to to see if it is significantly different from zero. (Report a two-tailed p-value for this which is the probability of a value being farther from zero for the test statistic, return.)
+```{r}
+t.test(str_ret, mu=0)
+```
+
+Since the p-value is less than 0.05, we reject the H0. That is, the return is significantly different from zero.
+
+## Estimate the return for this strategy over the last decade (2500 days). Report the same t-test from the last part for this recent window on the strategy.
+```{r}
+str_ret2 = tail(str_ret, 2500)
+t.test(str_ret2,mu=0)
+```
+
+Since the p-value is less than 0.05 (p-value = 5.176e-07), we reject the H0. That is, the return is significantly different from zero.

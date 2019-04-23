@@ -1,0 +1,37 @@
+---
+title: "PS2-DanlingMa"
+author: "DanlingMa"
+date: "2/1/2019"
+output: html_document
+---
+```{r}
+rm(list=ls())
+library(forecast)
+library(ggplot2)
+setwd("~/Desktop/Forecasting")
+# Passengers (All Carriers - Boston, MA: Logan International (Origin Airport))  
+# (www.bts.dot.gov)
+logan.data <- read.csv("LoganPassengers.csv")
+```
+# 1 For this problem load the Logan airport data set from the lecture csv file.
+  - Create time series for the domestic and international passengers.
+  - Plot both of these lines in the same plot. (Hint, use the plot command, and then the lines command for this. Type help(lines) for help on the lines command.
+  - Describe any similarities and differences between the two.
+  - Repeat this plot for a short window from 2014 to the end of the data set.
+```{r}
+# data comes as monthly entries with annual totals (see website)
+# need to remove annual values (these are just much bigger than monthly)
+# set 
+logan.data <- logan.data[logan.data$total<5000000,] 
+logan.data.dom = as.data.frame(logan.data[,1])
+logan.ts.total <- ts(logan.data$total,start=c(2002,10), freq=12) 
+logan.ts.dom <- ts(logan.data$domestic,start=c(2002,10), freq=12) 
+logan.ts.inter<- ts(logan.data$international,start=c(2002,10), freq=12)
+
+plot(logan.ts.dom,xlab="Year",ylab="Passengers",bty="l",ylim=range(100000,1500000),col="red")
+lines(logan.ts.inter,col="blue")
+lines(logan.ts.total,col='green')
+legend("topleft",legend=c("Domestic", "International","Total"),col=c("red","blue","green"),lty=1:1, cex=0.8)
+grid()
+```
+
